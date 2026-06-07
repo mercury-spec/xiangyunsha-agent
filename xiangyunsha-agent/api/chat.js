@@ -11,19 +11,33 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(`${baseURL}/v1/messages`, {
+    // 转换 Anthropic 格式 → OpenAI 格式
+    const { model, messages, system, max_tokens } = req.body
+    const openaiMessages = system
+      ? [{ role: 'system', content: system }, ...messages]
+      : messages
+
+    const response = await fetch(`${baseURL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        messages: openaiMessages,
+        max_tokens: max_tokens || 1000,
+      }),
     })
 
     const data = await response.json()
-    return res.status(response.ok ? 200 : response.status).json(data)
+
+    // 转换回 Anthropic 响应格式
+    const text = data.choices?.[0]?.message?.content || '抱歉，请稍后再试。'
+    return res.status(200).json({
+      content: [{ type: 'text', text }]
+    })
   } catch (error) {
     return res.status(500).json({ error: '服务器错误，请稍后重试' })
   }
+}
