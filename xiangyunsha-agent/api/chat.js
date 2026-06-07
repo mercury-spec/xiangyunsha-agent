@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { model, messages, system, max_tokens } = req.body
+    const { messages, system, max_tokens } = req.body
     const openaiMessages = system
       ? [{ role: 'system', content: system }, ...messages]
       : messages
@@ -35,6 +35,7 @@ module.exports = async function handler(req, res) {
       content: [{ type: 'text', text }]
     })
   } catch (error) {
+    console.error(error)
     return res.status(500).json({ error: '服务器错误，请稍后重试' })
   }
 }
